@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perception Lab - Visualize Your Perspective</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: white;
+      overflow-x: hidden;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Navigation Bar */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem 3rem;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      padding: 1rem 3rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      transition: width 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: #ff9980;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-cta {
+      padding: 0.7rem 1.5rem;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      border: none;
+      border-radius: 25px;
+      color: white !important;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(255, 107, 74, 0.4);
+    }
+
+    .nav-cta::after {
+      display: none;
+    }
+
+    /* Hamburger Menu */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    .hamburger span {
+      width: 30px;
+      height: 3px;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      border-radius: 3px;
+      transition: all 0.3s ease;
+    }
+
+    .hamburger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+
+    .hamburger.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .hamburger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(8px, -8px);
+    }
+
+    /* Mobile Menu */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 100%;
+      max-width: 400px;
+      height: 100vh;
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(30px);
+      border-left: 2px solid rgba(255, 107, 74, 0.3);
+      padding: 6rem 3rem;
+      transition: right 0.4s ease;
+      z-index: 999;
+      overflow-y: auto;
+    }
+
+    .mobile-menu.active {
+      right: 0;
+    }
+
+    .mobile-menu a {
+      display: block;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 1.3rem;
+      font-weight: 600;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .mobile-menu a:hover {
+      color: #ff9980;
+      padding-left: 1rem;
+    }
+
+    .mobile-cta {
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      border: none;
+      border-radius: 30px;
+      color: white;
+      font-weight: 700;
+      text-align: center;
+      display: block;
+      text-decoration: none;
+    }
+
+    /* Overlay for mobile menu */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .gradient-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: radial-gradient(circle at 20% 50%, rgba(255, 107, 74, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(74, 144, 226, 0.1) 0%, transparent 50%);
+      animation: gradient-shift 15s ease infinite;
+    }
+    
+    @keyframes gradient-shift {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding-top: 80px;
+    }
+    
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980, #ffc7b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      animation: fadeInUp 1s ease;
+    }
+    
+    .hero-subtitle {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 1rem;
+      animation: fadeInUp 1s ease 0.2s backwards;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      color: rgba(255, 107, 74, 0.9);
+      font-weight: 600;
+      margin-bottom: 3rem;
+      animation: fadeInUp 1s ease 0.3s backwards;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .cta-button {
+      padding: 1.2rem 3rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      border: none;
+      border-radius: 50px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 40px rgba(255, 107, 74, 0.4);
+      animation: fadeInUp 1s ease 0.4s backwards;
+      text-decoration: none;
+      display: inline-block;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .cta-button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 50px rgba(255, 107, 74, 0.6);
+    }
+
+    .cta-button span {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .floating-glasses {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      opacity: 0.15;
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
+
+    /* Introduction Section */
+    .introduction {
+      padding: 8rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .intro-title {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 900;
+      margin-bottom: 2rem;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .intro-content {
+      font-size: 1.3rem;
+      line-height: 2;
+      color: rgba(255, 255, 255, 0.8);
+      max-width: 900px;
+      margin: 0 auto 3rem;
+    }
+
+    .intro-highlight {
+      background: rgba(255, 107, 74, 0.1);
+      border-left: 4px solid #ff6b4a;
+      padding: 2rem;
+      border-radius: 12px;
+      margin: 3rem auto;
+      max-width: 800px;
+      text-align: left;
+    }
+
+    .intro-highlight h3 {
+      color: #ff9980;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .intro-highlight p {
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.8;
+    }
+    
+    /* User Message Section */
+    .user-message {
+      padding: 8rem 2rem;
+      background: linear-gradient(135deg, rgba(255, 107, 74, 0.05), rgba(255, 153, 128, 0.02));
+      text-align: center;
+    }
+
+    .message-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .message-title {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 900;
+      margin-bottom: 2rem;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .message-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 4rem;
+    }
+
+    .message-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 2.5rem;
+      transition: all 0.4s ease;
+    }
+
+    .message-card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(255, 107, 74, 0.5);
+      box-shadow: 0 20px 60px rgba(255, 107, 74, 0.3);
+    }
+
+    .message-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .message-text {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.7;
+    }
+
+    .message-text strong {
+      color: #ff9980;
+      font-weight: 700;
+    }
+    
+    /* What You'll See Section */
+    .click-effects {
+      padding: 8rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 2rem;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      font-size: 1.3rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 4rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .effects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2.5rem;
+      margin-top: 4rem;
+    }
+
+    .effect-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 3rem;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .effect-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 107, 74, 0.15) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .effect-card:hover::before {
+      opacity: 1;
+    }
+
+    .effect-card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(255, 107, 74, 0.4);
+      box-shadow: 0 20px 60px rgba(255, 107, 74, 0.2);
+    }
+
+    .effect-number {
+      display: inline-block;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .effect-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #ff9980;
+    }
+
+    .effect-desc {
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .effect-visual {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      border-left: 4px solid #ff6b4a;
+    }
+
+    .effect-visual-title {
+      font-size: 0.9rem;
+      color: rgba(255, 107, 74, 0.9);
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .effect-visual-desc {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    
+    /* Modes showcase */
+    .modes {
+      padding: 8rem 2rem;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .mode-showcase {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 4rem;
+    }
+    
+    .mode-card {
+      background: linear-gradient(135deg, rgba(255, 107, 74, 0.1), rgba(255, 153, 128, 0.05));
+      border: 2px solid rgba(255, 107, 74, 0.3);
+      border-radius: 20px;
+      padding: 2.5rem;
+      text-align: center;
+      transition: all 0.4s ease;
+    }
+    
+    .mode-card:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 107, 74, 0.6);
+      box-shadow: 0 20px 60px rgba(255, 107, 74, 0.3);
+    }
+    
+    .mode-symbol {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    
+    .mode-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #ff9980;
+    }
+    
+    .mode-description {
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.6;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .mode-effect {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      font-size: 0.85rem;
+      color: rgba(255, 107, 74, 0.9);
+      font-weight: 600;
+    }
+    
+    .mode-tags {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+    
+    .mode-tag {
+      background: rgba(255, 107, 74, 0.2);
+      border: 1px solid rgba(255, 107, 74, 0.4);
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    /* CTA Section */
+    .cta-section {
+      padding: 8rem 2rem;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(255, 107, 74, 0.1), rgba(255, 153, 128, 0.05));
+    }
+    
+    .cta-title {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      margin-bottom: 2rem;
+      background: linear-gradient(135deg, #ff6b4a, #ff9980);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .cta-subtitle {
+      font-size: 1.3rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 3rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    /* Footer */
+    .footer {
+      padding: 3rem 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* Scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(10px); }
+    }
+    
+    .scroll-indicator svg {
+      width: 30px;
+      height: 30px;
+      opacity: 0.5;
+    }
+    
+    /* Responsive */
+    @media (max-width: 968px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      .navbar {
+        padding: 1.5rem 2rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        padding: 2rem;
+      }
+      
+      .introduction, .user-message, .click-effects, .modes {
+        padding: 4rem 1rem;
+      }
+      
+      .effect-card, .mode-card, .message-card {
+        padding: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="navbar">
+    <div class="logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+      Perception Lab
+    </div>
+    
+    <!-- Desktop Navigation -->
+    <div class="nav-links">
+      <a href="#introduction">About</a>
+      <a href="#message">Message</a>
+      <a href="#effects">Click Effects</a>
+      <a href="#modes">Modes</a>
+      <a href="harmony-clean-final.html" class="nav-cta">Experience Now</a>
+    </div>
+
+    <!-- Hamburger Menu Button -->
+    <div class="hamburger" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#introduction">About</a>
+    <a href="#message">Message to Users</a>
+    <a href="#effects">Click Effects</a>
+    <a href="#modes">4 Modes</a>
+    <a href="harmony-clean-final.html" class="mobile-cta">Launch Experience ✨</a>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Animated Background -->
+  <div class="gradient-bg"></div>
+  
+  <!-- Hero Section -->
+  <section class="hero">
+    <div style="max-width: 1200px; padding: 0 2rem; text-align: center; position: relative; z-index: 1;">
+      <h1 class="hero-title">Perception Lab</h1>
+      <p class="hero-subtitle">An Interactive Journey Through Perspective</p>
+      <p class="hero-tagline">Click. Transform. Discover How You See The World.</p>
+      <a href="harmony-clean-final.html" class="cta-button">
+        <span>✨ Start Your Experience</span>
+      </a>
+      
+      <!-- Floating glasses decorations -->
+      <div class="floating-glasses" style="top: 20%; left: 10%; animation-delay: 0s;">👓</div>
+      <div class="floating-glasses" style="top: 60%; right: 15%; animation-delay: 1s;">👓</div>
+      <div class="floating-glasses" style="bottom: 20%; left: 20%; animation-delay: 2s;">👓</div>
+    </div>
+    
+    <!-- Scroll indicator -->
+    <div class="scroll-indicator">
+      <svg fill="white" viewBox="0 0 24 24">
+        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Introduction Section -->
+  <section class="introduction" id="introduction">
+    <h2 class="intro-title">What is Perception Lab?</h2>
+    <p class="intro-content">
+      Perception Lab is an <strong>interactive 3D platform</strong> where you can visually experience 
+      the diversity of perspectives. Through the symbol of glasses, you can intuitively understand 
+      how different viewpoints interact, merge, and sometimes collide.
+    </p>
+
+    <div class="intro-highlight">
+      <h3>🎯 Core Concept</h3>
+      <p>
+        We all see the world through different "glasses." This project visualizes the moments 
+        when these diverse perspectives meet in beautiful and meaningful ways. With a single click, 
+        experience perspectives separating, merging, and distorting in real-time.
+      </p>
+    </div>
+
+    <p class="intro-content" style="margin-top: 3rem;">
+      Built with Three.js advanced 3D graphics and GSAP animations, 
+      it goes beyond mere visuals to provide <strong>philosophical insights</strong>.
+    </p>
+  </section>
+
+  <!-- User Message Section -->
+  <section class="user-message" id="message">
+    <div class="message-container">
+      <h2 class="message-title">Our Message to You</h2>
+      
+      <div class="message-grid">
+        <div class="message-card">
+          <div class="message-icon">🔍</div>
+          <p class="message-text">
+            <strong>Your perspective isn't everything.</strong><br/>
+            When we understand and accept other viewpoints, we experience a richer world.
+          </p>
+        </div>
+
+        <div class="message-card">
+          <div class="message-icon">🤝</div>
+          <p class="message-text">
+            <strong>Harmony is possible.</strong><br/>
+            Different perspectives can merge to create new insights and understanding.
+          </p>
+        </div>
+
+        <div class="message-card">
+          <div class="message-icon">⚖️</div>
+          <p class="message-text">
+            <strong>Don't lose balance.</strong><br/>
+            One-sided views distort reality. The balance of diverse perspectives matters.
+          </p>
+        </div>
+
+        <div class="message-card">
+          <div class="message-icon">💡</div>
+          <p class="message-text">
+            <strong>Clarity is essential.</strong><br/>
+            Sometimes we must first clearly understand each perspective independently.
+          </p>
+        </div>
+
+        <div class="message-card">
+          <div class="message-icon">🌈</div>
+          <p class="message-text">
+            <strong>Diversity is beautiful.</strong><br/>
+            The very existence of varied perspectives enriches our society.
+          </p>
+        </div>
+
+        <div class="message-card">
+          <div class="message-icon">🎭</div>
+          <p class="message-text">
+            <strong>Be aware of perception.</strong><br/>
+            Recognizing how we see is the first step toward change.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Click Effects Section -->
+  <section class="click-effects" id="effects">
+    <h2 class="section-title">What Happens When You Click?</h2>
+    <p class="section-subtitle">
+      Every click brings stunning visual effects and transformative experiences
+    </p>
+    
+    <div class="effects-grid">
+      <div class="effect-card">
+        <div class="effect-number">1</div>
+        <h3 class="effect-title">Glasses Selection</h3>
+        <p class="effect-desc">
+          When you click on floating glasses in 3D space, immediate responses occur.
+        </p>
+        <div class="effect-visual">
+          <div class="effect-visual-title">🎬 Visual Effects</div>
+          <div class="effect-visual-desc">
+            • Glowing highlight<br/>
+            • Selection counter update<br/>
+            • Smooth scale animation<br/>
+            • Pulsing light rhythm
+          </div>
+        </div>
+      </div>
+      
+      <div class="effect-card">
+        <div class="effect-number">2</div>
+        <h3 class="effect-title">Mode Switching</h3>
+        <p class="effect-desc">
+          After selecting 2 glasses, clicking mode buttons triggers dramatic transformations.
+        </p>
+        <div class="effect-visual">
+          <div class="effect-visual-title">🎬 Visual Effects</div>
+          <div class="effect-visual-desc">
+            • Camera zoom in/out<br/>
+            • Major position shifts<br/>
+            • Size changes (0.5x~2.5x)<br/>
+            • Rotation animations
+          </div>
+        </div>
+      </div>
+      
+      <div class="effect-card">
+        <div class="effect-number">3</div>
+        <h3 class="effect-title">Singular Vision Effect</h3>
+        <p class="effect-desc">
+          Selected glasses dramatically separate left and right, emphasizing individuality.
+        </p>
+        <div class="effect-visual">
+          <div class="effect-visual-title">🎬 Visual Effects</div>
+          <div class="effect-visual-desc">
+            • Explosive left-right separation<br/>
+            • 1.8x magnification<br/>
+            • Intense glowing<br/>
+            • Others pushed far back
+          </div>
+        </div>
+      </div>
+      
+      <div class="effect-card">
+        <div class="effect-number">4</div>
+        <h3 class="effect-title">Harmony Effect</h3>
+        <p class="effect-desc">
+          Glasses move close together, become transparent, and merge into one.
+        </p>
+        <div class="effect-visual">
+          <div class="effect-visual-title">🎬 Visual Effects</div>
+          <div class="effect-visual-desc">
+            • Extremely close positioning<br/>
+            • 70% transparency<br/>
+            • Color blending<br/>
+            • Boundary dissolution
+          </div>
+        </div>
+      </div>
+      
+      <div class="effect-card">
+        <div class="effect-number">5</div>
+        <h3 class="effect-title">Cognitive Bias Effect</h3>
+        <p class="effect-desc">
+          Asymmetric placement visualizes distorted perception.
+        </p>
+        <div class="effect-visual">
+          <div class="effect-visual-title">🎬 Visual Effects</div>
+          <div class="effect-visual-desc">
+            • Size distortion (2.8x vs 0.6x)<br/>
+            • Asymmetric positions<br/>
+            • Angular rotation<br/>
+            • Color contrast (red vs blue)
+          </div>
+        </div>
+      </div>
+      
+      <div class="effect-card">
+        <div class="effect-number">6</div>
+        <h3 class="effect-title">Additional Interactions</h3>
+        <p class="effect-desc">
+          Every interaction provides detailed feedback for an immersive experience.
+        </p>
+        <div class="effect-visual">
+          <div class="effect-visual-title">🎬 Visual Effects</div>
+          <div class="effect-visual-desc">
+            • Cursor change on hover<br/>
+            • Real-time status updates<br/>
+            • Smooth 1.5s transitions<br/>
+            • Synchronized background motion
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Modes Showcase -->
+  <section class="modes" id="modes">
+    <h2 class="section-title">4 Perception Modes</h2>
+    <p class="section-subtitle">
+      Each mode contains unique visual effects and philosophical meaning
+    </p>
+    
+    <div class="mode-showcase">
+      <div class="mode-card">
+        <span class="mode-symbol">✦</span>
+        <h3 class="mode-name">Normal Mode</h3>
+        <p class="mode-description">
+          All perspectives exist in balanced harmony, rotating gently in space
+        </p>
+        <div class="mode-effect">
+          🎬 Circular arrangement • Gentle rotation • Equal sizing
+        </div>
+        <div class="mode-tags">
+          <span class="mode-tag">Balance</span>
+          <span class="mode-tag">Neutral</span>
+          <span class="mode-tag">Harmony</span>
+        </div>
+      </div>
+      
+      <div class="mode-card">
+        <span class="mode-symbol">◆</span>
+        <h3 class="mode-name">Singular Vision</h3>
+        <p class="mode-description">
+          Each perspective becomes independently clear, emphasizing individuality
+        </p>
+        <div class="mode-effect">
+          🎬 Extreme separation • 1.8x enlargement • Intense glow
+        </div>
+        <div class="mode-tags">
+          <span class="mode-tag">Clarity</span>
+          <span class="mode-tag">Focus</span>
+          <span class="mode-tag">Distinction</span>
+        </div>
+      </div>
+      
+      <div class="mode-card">
+        <span class="mode-symbol">◈</span>
+        <h3 class="mode-name">Harmony</h3>
+        <p class="mode-description">
+          Different perspectives merge into one, creating new insights
+        </p>
+        <div class="mode-effect">
+          🎬 Close proximity • 70% transparency • Color mixing
+        </div>
+        <div class="mode-tags">
+          <span class="mode-tag">Fusion</span>
+          <span class="mode-tag">Unity</span>
+          <span class="mode-tag">Integration</span>
+        </div>
+      </div>
+      
+      <div class="mode-card">
+        <span class="mode-symbol">◉</span>
+        <h3 class="mode-name">Cognitive Bias</h3>
+        <p class="mode-description">
+          Imbalanced perspectives create distorted perception
+        </p>
+        <div class="mode-effect">
+          🎬 Asymmetric layout • Size distortion • Color contrast
+        </div>
+        <div class="mode-tags">
+          <span class="mode-tag">Bias</span>
+          <span class="mode-tag">Distortion</span>
+          <span class="mode-tag">Imbalance</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <h2 class="cta-title">Ready to Begin?</h2>
+    <p class="cta-subtitle">
+      Launch Perception Lab now and embark on a journey through the world of perspectives
+    </p>
+    <a href="harmony-clean-final.html" class="cta-button" style="animation: none;">
+      <span>🚀 Launch Experience</span>
+    </a>
+    <p style="margin-top: 2rem; color: rgba(255, 255, 255, 0.5); font-size: 0.95rem;">
+      ⏱️ 2-3 minutes • 🎮 Fully interactive • 🌟 No download required
+    </p>
+  </section>
+  
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2024 Perception Lab. All rights reserved.</p>
+    <p style="margin-top: 1rem; font-size: 0.9rem;">
+      Where perspective becomes tangible
+    </p>
+  </footer>
+  
+  <script>
+    // Hamburger Menu Toggle
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const overlay = document.getElementById('overlay');
+    const body = document.body;
+
+    function toggleMenu() {
+      hamburger.classList.toggle('active');
+      mobileMenu.classList.toggle('active');
+      overlay.classList.toggle('active');
+      body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : 'auto';
+    }
+
+    hamburger.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
+
+    // Close menu when clicking a link
+    document.querySelectorAll('.mobile-menu a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (!link.classList.contains('mobile-cta')) {
+          toggleMenu();
+        }
+      });
+    });
+
+    // Navbar scroll effect
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // GSAP ScrollTrigger animations
+    gsap.registerPlugin(ScrollTrigger);
+    
+    // Message cards animation
+    gsap.utils.toArray('.message-card').forEach((card, i) => {
+      gsap.from(card, {
+        scrollTrigger: {
+          trigger: card,
+          start: 'top 80%',
+          toggleActions: 'play none none none'
+        },
+        opacity: 0,
+        y: 50,
+        duration: 0.8,
+        delay: i * 0.1
+      });
+    });
+
+    // Effect cards animation
+    gsap.utils.toArray('.effect-card').forEach((card, i) => {
+      gsap.from(card, {
+        scrollTrigger: {
+          trigger: card,
+          start: 'top 80%',
+          toggleActions: 'play none none none'
+        },
+        opacity: 0,
+        x: i % 2 === 0 ? -50 : 50,
+        duration: 0.8,
+        delay: (i % 3) * 0.15
+      });
+    });
+    
+    // Mode cards animation
+    gsap.utils.toArray('.mode-card').forEach((card, i) => {
+      gsap.from(card, {
+        scrollTrigger: {
+          trigger: card,
+          start: 'top 80%',
+          toggleActions: 'play none none none'
+        },
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.8,
+        delay: i * 0.15
+      });
+    });
+    
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          const offset = 80; // navbar height
+          const targetPosition = target.offsetTop - offset;
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
